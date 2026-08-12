@@ -1,6 +1,6 @@
 # chaos
                   
-name: chaos                       
+Name: chaos                       
           
 features: 
 - local port scanner              
