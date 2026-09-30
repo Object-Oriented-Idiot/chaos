@@ -1,7 +1,18 @@
 from datetime import datetime
 import nmap
 import scapy.all as scapy
+from functools import wraps
 
+def uhh(func):
+    @wraps(func)
+    def inner(self):
+        print('Process started.')
+         result = func(self)
+        print('Process ended')
+        return result
+    return inner
+
+    
 class exceptions(type):
     list_of_custom_exceptions = []
     def __new__(cls, name, bases, namespace):
@@ -57,7 +68,8 @@ class cmd():
                     print('Please enter a valid command.')
                 self.cmd = (str(input('chaos>>> '))).split()
             exit()
-    
+
+    @uhh
     def psw(self, subnet):
         nm = nmap.PortScanner()
         print(f'Please wait. Pinging devices on subnet {subnet}.')
@@ -70,6 +82,7 @@ class cmd():
         except Exception as Error:
             raise PortScanningError from Error
 
+    @uhh
     def scan_tcp(self, address): 
         print(f'Please wait. The program has recieved the address: {address}, and is now working on scanning it to find the open TCP ports.\nThis will take ~30 seconds.')
         nm = nmap.PortScanner()
@@ -81,6 +94,7 @@ class cmd():
         if (len(scannedbynmap)) == 0: 
             print('The device you are trying to scan seems unreachable.')
 
+    @uhh
     def scan_udp(self, address): 
         print(f'Please wait. The program has recieved the address: {address}, and is now working on scanning it to find the open UDP ports.\nThis will take ~90+ seconds.')
         nm = nmap.PortScanner()
@@ -107,6 +121,7 @@ class cmd():
         content = file.read()
         print('There are currently three main tools from this toolkit.\n1: Port scanner\n2: Ping sweeper\n3: Packet sniffer\nHere is the documentation of this toolkit.\n', content) 
 
+    @uhh
     def sniff(self, pc):
         pkts = scapy.sniff(count = pc)
         counter = 0
