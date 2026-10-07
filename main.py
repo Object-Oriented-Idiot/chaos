@@ -8,7 +8,7 @@ def uhh(func):
     def inner(self):
         print('Process started.')
          result = func(self)
-        print('Process ended')
+        print('Process ended.')
         return result
     return inner
 
@@ -33,7 +33,7 @@ print('Please do not use this toolkit in a way which harasses the 1990 Computer 
 userscmd = str(input('chaos>>> '))
 
 def error_msg():
-    print('It seems their is an error. Please do not contact the developer, she is anti-social(or contact killmyself174236981651321000678123456789000678@tor2box.com (checked every few years)).')
+    print('It seems their is an error. Please do not contact the developer, she is anti-social.')
     exit()
 
 class cmd():
