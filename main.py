@@ -1,8 +1,9 @@
 #!!! does not follow PEP8/257
+#extremely over-commented version: https://github.com/Object-Oriented-Idiot/encryption-and-decryption-program/commit/9499aa7de3cdf67f893d150aadb86dfad1548ad1
 
 """This program is able to take an file and en/decrypt its contents."""
 
-print('this is a toy project which is not secure, do n\'t test this on files you care about unless your a script kiddie who has no life out of running random scripts that you dont understand LARPER get back to coding')
+print('this is a toy project which is not secure, do n\'t test this on files you care about.')
 
 import re
 import scrypt
@@ -39,12 +40,11 @@ class FileIsAlreadyEncryptedError(CustomError): pass
 class FileIsNotEncryptedError(CustomError): pass
 
 def format_(function):
-    """This decorator(function) notifies the user when the process of en/decryption starts and finished.
+    """This decorator(function) notifies the user when the process of en/decryption starts and finished. I am too lazy to write more docstrings.
     """
     @wraps(function)
     def inner(self):
         try: 
-            print(f'{function.__name__.capitalize()}ion process started- this may take some time.')
         except: 
             print(f'{function.__name__.capitalize()}ion process ended- thank you for waiting.')
         try:
@@ -69,9 +69,9 @@ class FileConverter():
             raise FileTypeUnsupportedError
         if not self.path.is_file(): 
             raise FileNotFoundError
-        self.password = getpass('Please enter a password you can use to accsess your file.')
+        self.password = getpass('Please enter a password you can use to acsess your file.')
         while not self.password: 
-            self.password = getpass('Please enter a password you can use to acses your file which is not empty.')
+            self.password = getpass('Please enter a password you can use to acsess your file which is not empty.')
 
 
     def rename(self): 
@@ -93,11 +93,7 @@ class FileConverter():
           
         except OSError: 
             Input = str(input('Error:Rename failed.\n Would you like to try again?(Y/N)'))
-            if Input in ['yeah', ' yes', 'uhm sure ig', ' YES', 'yea', 'mhm', 'YEYSYEYSYYEYSYEYSYEYSYYEYSYYEYSYEYYS',
-                         'help me my dog is chasing me on two feet becuse i ate its food and now it has red eyes im really scared',
-                         'Yes', 'yEs','y', 'Y', 'yeS', 'YeS', 'yES', 'YEs', 'yes bbg', 'VEGETABLES.', 'zeep zorp', 'EUREKA!',
-                        'i\'m happy finally somone is looking at my code, so thank you :) WAIT NO ONE IS YOU LARPER FRAUD ABSOULUTE UNCINEMA LARPER ;ARPER LARPER', 'im a chud im a chud im a fat little chud'
-                        ]:
+            if Input.lower() in ['y', ' yes']:
                   self.rename()
             elif Input.lower() in [ 'n', 'no']:
                   return
@@ -107,13 +103,11 @@ class FileConverter():
 
     @format_
     def decrypt(self):
-
         if  not self.path.stem.endswith('.encrypted'):
             raise FileIsNotEncryptedError
         with self.path.open('rb') as file:
             contents = file.read()
         self.second_copy = deepcopy(contents)
-            
         if len(contents):
             try:
                 contents = scrypt.decrypt(contents, self.password) 
@@ -145,20 +139,17 @@ class FileConverter():
             self.second_copy = deepcopy(contents)
         except PermissionError:
             print('Error: The file does not seem to be compatible with reading.')
-            return
-            
+            return 
         try:
             contents = scrypt.encrypt(contents, self.password) 
         except scrypt.error as e:
             print(f'Error: {e.args}')
-            return
-            
+            return 
         try:
             with tempfile.TemporaryFile(mode='w+b') as file:
                 file.write(contents)
                 file.seek(0)
                 content_check = file.read()
-              
             if content_check != contents: 
                 raise FileWritingError
             with self.path.open('wb') as file:
@@ -174,4 +165,3 @@ class FileConverter():
                 print('Attempt failed, proceeding with process. File may turn corrupted.')
             return
         self.rename()
-
