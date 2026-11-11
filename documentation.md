@@ -17,3 +17,7 @@
 'ping-sweep (subnet)' -> prints all devices's IPv4 adress which are online to the terminal
 
 'packet-sniff (number)' -> prints the details of each packet (number is how many packets you want to sniff) to the terminal if wanted
+
+'setup (filename)' -> sets up a file for encryption and decryption
+'encrypt (filename)' -> encrypts a file (only works after setup)
+'decrypt (filename)' ->

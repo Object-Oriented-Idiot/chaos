@@ -1,16 +1,19 @@
-from datetime import datetime
+import re
 import nmap
+import scrypt
+import tempfile
+from pathlib import Path
+from copy import deepcopy 
 import scapy.all as scapy
+from getpass import getpass
 from functools import wraps
+from datetime import datetime
 
-def uhh(func):
-    @wraps(func)
-    def inner(self):
-        print('Process started.')
-         result = func(self)
-        print('Process ended.')
-        return result
-    return inner
+SUPPORTED_FILE_ENDING_TYPES = ( '.txt', '.csv', '.json',
+                                '.xml', '.docx', '.rtf', 
+                                '.md', '.png', '.zip', 
+                                '.pdf') 
+
 
     
 class exceptions(type):
@@ -27,7 +30,29 @@ class CustomError(Exception, metaclass=exceptions):
         self.errormsg = (' '.join(self.errormsg)).lower()
         super().__init__(self.errormsg)
 
-    class PortScanningError(CustomError): pass
+class PortScanningError(CustomError): pass
+class FileTypeUnsupportedError(CustomError): pass
+class FileEmptyError(CustomError): pass
+class InputUnrecognisedError(CustomError): pass
+class ProcessingError(CustomError): pass
+class FileWritingError(CustomError): pass
+class FileIsAlreadyEncryptedError(CustomError): pass
+class FileIsNotEncryptedError(CustomError): pass
+
+def format_(function):
+    @wraps(function)
+    def inner(self):
+        print('Process started.')
+        try:
+            result = function(self)
+        except Exception as Error:
+            print('Data may have corrupted.')
+            raise ProcessingError from Error
+        finally:
+            print('Process ended.')
+        return result
+    return inner
+
 
 print('Please do not use this toolkit in a way which harasses the 1990 Computer Misuse Act.\nThis toolkit only has over-simple/basic tools and there are also lots of bugs, as this is the developer\'s first time writing full code, sorry.') 
 userscmd = str(input('chaos>>> '))
@@ -36,40 +61,14 @@ def error_msg():
     print('It seems their is an error. Please do not contact the developer, she is anti-social.')
     exit()
 
+
 class cmd():
 
     def __init__(self):
         self.cmd = userscmd.split()
+        self.setup = False
 
-    def process_cmd(self):
-        while self.cmd:
-            while self.cmd[0] != 'exit':
-                if self.cmd[0] == 'scan':
-                    if self.cmd[1].lower == 'udp':
-                        if self.cmd[2] in ['ports', 'ports:']:
-                            scan_udp(self.cmd[3])
-                            cmd_done() 
-                    elif self.cmd[1].lower() == 'tcp':
-                        if self.cmd[2] in ['ports', 'ports:']:
-                            scan_tcp(self.cmd[3])
-                            cmd_done() 
-                    elif self.cmd[1] == 'both':
-                        if self.cmd[2] in ['ports', 'ports:']:
-                            scan_tcp(self.cmd[3])
-                            scan_udp(self.cmd[3])
-                            cmd_done()
-                elif self.cmd[0] == 'ping-sweep':
-                    psw(self.cmd[1])
-                elif self.cmd[0] in ['help','cmds','commands']:
-                    help()
-                elif self.cmd[0] == 'packet-sniff':
-                    sniff(self.cmd[1])
-                else:
-                    print('Please enter a valid command.')
-                self.cmd = (str(input('chaos>>> '))).split()
-            exit()
-
-    @uhh
+    @format_
     def psw(self, subnet):
         nm = nmap.PortScanner()
         print(f'Please wait. Pinging devices on subnet {subnet}.')
@@ -82,7 +81,7 @@ class cmd():
         except Exception as Error:
             raise PortScanningError from Error
 
-    @uhh
+    @format_
     def scan_tcp(self, address): 
         print(f'Please wait. The program has recieved the address: {address}, and is now working on scanning it to find the open TCP ports.\nThis will take ~30 seconds.')
         nm = nmap.PortScanner()
@@ -94,7 +93,7 @@ class cmd():
         if (len(scannedbynmap)) == 0: 
             print('The device you are trying to scan seems unreachable.')
 
-    @uhh
+    @format_
     def scan_udp(self, address): 
         print(f'Please wait. The program has recieved the address: {address}, and is now working on scanning it to find the open UDP ports.\nThis will take ~90+ seconds.')
         nm = nmap.PortScanner()
@@ -121,7 +120,7 @@ class cmd():
         content = file.read()
         print('There are currently three main tools from this toolkit.\n1: Port scanner\n2: Ping sweeper\n3: Packet sniffer\nHere is the documentation of this toolkit.\n', content) 
 
-    @uhh
+    @format_
     def sniff(self, pc):
         pkts = scapy.sniff(count = pc)
         counter = 0
@@ -134,66 +133,9 @@ class cmd():
                     f.error_msg()
             counter += 1
 
-    def cmd_done(self):
-        print(f'This command has been sucsessfully been completed at {datetime.now()}')
-
-uhhh = cmd()
-uhhh.process_cmd()
-
-import re
-import scrypt
-import tempfile
-from pathlib import Path
-from copy import deepcopy 
-from getpass import getpass
-from functools import wraps
-
-SUPPORTED_FILE_ENDING_TYPES = ( '.txt', '.csv', '.json',
-                                '.xml', '.docx', '.rtf', 
-                                '.md', '.png', '.zip', 
-                                '.pdf') 
-
-class exceptions(type): 
-    def __new__(cls, name, bases, namespace):
-        namespace['__str__'] = lambda self: f'Error: {self.errormsg}'
-        return super().__new__(cls, name, bases, namespace) 
-
-class CustomError(Exception, metaclass=exceptions):
-    def __init__(self):
-        self.errorname = type(self).__name__
-        try: self.errormsg = re.findall('[A-Z][^A-Z]*', self.errorname.removesuffix('Error'))
-        except as Error: print('An error has occured:', Error.args)
-        self.errormsg = (' '.join(self.errormsg)).lower()
-        super().__init__(self.errormsg)
-
-class FileTypeUnsupportedError(CustomError): pass
-class FileEmptyError(CustomError): pass
-class InputUnrecognisedError(CustomError): pass
-class ProcessingError(CustomError): pass
-class FileWritingError(CustomError): pass
-class FileIsAlreadyEncryptedError(CustomError): pass
-class FileIsNotEncryptedError(CustomError): pass
-
-def format_(function):
-    """This decorator(function) notifies the user when the process of en/decryption starts and finished. I am too lazy to write more docstrings.
-    """
-    @wraps(function)
-    def inner(self):
-        try: 
-        except: 
-            print(f'{function.__name__.capitalize()}ion process ended- thank you for waiting.')
-        try:
-            result = function(self)
-        except Exception as Error:
-            raise ProcessingError from Error
-        finally:
-            print(f'{function.__name__.capitalize()}ion process ended- thank you for waiting.')
-        return result
-    return inner
-
-
-class FileConverter(): 
-    def __init__(self, filename):
+    @format_
+    def setup(self, filename):
+        self.setup = True
         self.filename = filename 
         self.path = Path(self.filename).resolve()
         if self.path.stem.endswith('.encrypted'): 
@@ -238,67 +180,110 @@ class FileConverter():
 
     @format_
     def decrypt(self):
-        if  not self.path.stem.endswith('.encrypted'):
-            raise FileIsNotEncryptedError
-        with self.path.open('rb') as file:
-            contents = file.read()
-        self.second_copy = deepcopy(contents)
-        if len(contents):
+        if self.setup == True:
+            if  not self.path.stem.endswith('.encrypted'):
+                raise FileIsNotEncryptedError
+            with self.path.open('rb') as file:
+                contents = file.read()
+            self.second_copy = deepcopy(contents)
+            if len(contents):
+                try:
+                    contents = scrypt.decrypt(contents, self.password) 
+                    with tempfile.TemporaryFile(mode='w+b') as file:
+                        file.write(contents)
+                        file.seek(0)
+                        content_check = file.read()
+                    if content_check != contents:
+                             raise FileWritingError
+                    with self.path.open('wb') as file: 
+                        file.write(contents)
+                    self.encrypted = False
+                except (scrypt.error, FileWritingError) as Error:
+                    print(f'Error: {Error.args}, attempting to restore original content\'s')
+                    with self.path.open('wb') as file: 
+                        file.write(self.second_copy)
+                    return
+            else:
+                raise FileEmptyError
+            self.rename()
+        else:
+            print ('Process failed: setup of file was not initialised.')
+
+    @format_
+    def encrypt(self):
+        if self.encrypt == True:
+            if self.path.stem.endswith('.encrypted'): 
+                raise FileIsAlreadyEncryptedError 
             try:
-                contents = scrypt.decrypt(contents, self.password) 
+                with self.path.open('rb') as file:
+                    contents = file.read() 
+                self.second_copy = deepcopy(contents)
+            except PermissionError:
+                print('Error: The file does not seem to be compatible with reading.')
+                return 
+            try:
+                contents = scrypt.encrypt(contents, self.password) 
+            except scrypt.error as e:
+                print(f'Error: {e.args}')
+                return 
+            try:
                 with tempfile.TemporaryFile(mode='w+b') as file:
                     file.write(contents)
                     file.seek(0)
                     content_check = file.read()
-                if content_check != contents:
-                         raise FileWritingError
-                with self.path.open('wb') as file: 
+                if content_check != contents: 
+                    raise FileWritingError
+                with self.path.open('wb') as file:
                     file.write(contents)
-                self.encrypted = False
-            except (scrypt.error, FileWritingError) as Error:
-                print(f'Error: {Error.args}, attempting to restore original content\'s')
-                with self.path.open('wb') as file: 
-                    file.write(self.second_copy)
+                self.encrypted = True      
+            except (OSError, FileWritingError) as Error:
+                print(f"Error: {Error.args}, attempting to restore file's original contents")
+                try:
+                    with self.path.open('wb') as file: 
+                        file.write(self.second_copy)
+                except (OSError, FileWritingError): 
+                    print('Attempt failed, proceeding with process. File may turn corrupted.')
                 return
+            self.rename()
         else:
-            raise FileEmptyError
-        self.rename()
+            print ('Process failed: setup of file was not initialised.')
 
-    @format_
-    def encrypt(self):
-        if self.path.stem.endswith('.encrypted'): 
-            raise FileIsAlreadyEncryptedError 
-        try:
-            with self.path.open('rb') as file:
-                contents = file.read() 
-            self.second_copy = deepcopy(contents)
-        except PermissionError:
-            print('Error: The file does not seem to be compatible with reading.')
-            return 
-        try:
-            contents = scrypt.encrypt(contents, self.password) 
-        except scrypt.error as e:
-            print(f'Error: {e.args}')
-            return 
-        try:
-            with tempfile.TemporaryFile(mode='w+b') as file:
-                file.write(contents)
-                file.seek(0)
-                content_check = file.read()
-            if content_check != contents: 
-                raise FileWritingError
-            with self.path.open('wb') as file:
-                file.write(contents)
-            self.encrypted = True
-          
-        except (OSError, FileWritingError) as Error:
-            print(f"Error: {Error.args}, attempting to restore file's original contents")
-            try:
-                with self.path.open('wb') as file: 
-                    file.write(self.second_copy)
-            except (OSError, FileWritingError): 
-                print('Attempt failed, proceeding with process. File may turn corrupted.')
-            return
-        self.rename()o
+    def cmd_done(self):
+            print(f'This command has been sucsessfully been completed at {datetime.now()}')
 
-
+    def process_cmd(self):
+        while self.cmd:
+            while self.cmd[0] != 'exit':
+                if self.cmd[0] == 'scan':
+                    if self.cmd[1].lower == 'udp':
+                        if self.cmd[2] in ['ports', 'ports:']:
+                            scan_udp(self.cmd[3])
+                            cmd_done() 
+                    elif self.cmd[1].lower() == 'tcp':
+                        if self.cmd[2] in ['ports', 'ports:']:
+                            scan_tcp(self.cmd[3])
+                            self.cmd_done() 
+                    elif self.cmd[1] == 'both':
+                        if self.cmd[2] in ['ports', 'ports:']:
+                            self.scan_tcp(self.cmd[3])
+                            self.scan_udp(self.cmd[3])
+                            self.cmd_done()
+                elif self.cmd[0] == 'ping-sweep':
+                    self.psw(self.cmd[1])
+                elif self.cmd[0] in ['help','cmds','commands']:
+                    self.help()
+                elif self.cmd[0] == 'packet-sniff':
+                    self.sniff(self.cmd[1])
+                elif self.cmd[0] == 'setup':
+                    self.setup(self.cmd[1])
+                elif self.cmd[0] == 'encrypt':
+                    self.encrypt(self.cmd[1])
+                elif self.cmd[0] == 'decrypt':
+                    self.decrypt(self.cmd[1])
+                else:
+                    print('Please enter a valid command.')
+                self.cmd = (str(input('chaos>>> '))).split()
+            exit()
+    
+uhhh = cmd()
+uhhh.process_cmd()
