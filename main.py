@@ -31,6 +31,7 @@ class CustomError(Exception, metaclass=exceptions):
         super().__init__(self.errormsg)
 
 class PortScanningError(CustomError): pass
+class FileNotAbleToEncryptOrDecrypt(CustomError): pass
 class FileTypeUnsupportedError(CustomError): pass
 class FileEmptyError(CustomError): pass
 class InputUnrecognisedError(CustomError): pass
@@ -38,6 +39,12 @@ class ProcessingError(CustomError): pass
 class FileWritingError(CustomError): pass
 class FileIsAlreadyEncryptedError(CustomError): pass
 class FileIsNotEncryptedError(CustomError): pass
+class DeviceUnreachableError(CustomError): pass
+class NoUdpPortsOpenError(CustomError): pass
+class UdpPortsOpenButNoResponseFromNmapError(CustomError): pass
+class NoUdpPortsDetectedError(CustomError): pass
+class PacketSniffingError(CustomError): pass
+
 
 def format_(function):
     @wraps(function)
@@ -62,7 +69,7 @@ def error_msg():
     exit()
 
 
-class cmd():
+class imgoingtofuckingkillyoumyself():
 
     def __init__(self):
         self.cmd = userscmd.split()
@@ -91,7 +98,7 @@ class cmd():
             if (nm[address]['tcp'][port]['state']) == 'open': 
                 print(f'Port {port} is open with TCP running, using {nm[address]['tcp'][port]['version']}')
         if (len(scannedbynmap)) == 0: 
-            print('The device you are trying to scan seems unreachable.')
+            raise DeviceUnreachableError
 
     @format_
     def scan_udp(self, address): 
@@ -99,21 +106,18 @@ class cmd():
         nm = nmap.PortScanner()
         nm.scan(address, arguments='-sU --top-ports 50 -Pn --disable-arp-ping')
         if address not in nm.all_hosts():
-            print('The device you are trying to reach is unreachable.')
-            return 0
+            raise DeviceUnreachableError
         elif 'udp' not in nm[address].keys(): 
-            print('It seems that there is no UDP ports open. UDP is sketchy I don\'t like it.')
-            return 0
+            raise NoUdpPortsOpenError
         elif nm[address]['udp'] == []: 
-            print('It seems that you have UDP ports, but nmap didnt get any response from them. How unreliable of UDP.')
-            return 0
+            raise UdpPortsOpenButNoResponseFromNmapError
         scannedbynmap = nm[address]['udp'].keys()
         for port in scannedbynmap:
             check_state = nm[address]['udp'][port]['state']
             if check_state == 'open': 
                 print(f'Port {port} is {check_state} with UDP.')
         if not(output):
-            print('Scan finished, no UDP ports detected.')
+            raise NoUdpPortsDetectedError
 
     def help(self):
         file = open('documentation.md','r')
@@ -130,7 +134,7 @@ class cmd():
                 try: 
                     print(f"Source IP: {packet['IP'].src}\nDestination MAC: {packet['Ether'].dst}")
                 except: 
-                    f.error_msg()
+                    raise PacketSniffingError
             counter += 1
 
     @format_
@@ -150,7 +154,7 @@ class cmd():
         while not self.password: 
             self.password = getpass('Please enter a password you can use to acsess your file which is not empty.')
 
-
+    @format_
     def rename(self): 
         try:
             if self.encrypted: 
@@ -166,8 +170,8 @@ class cmd():
                         self.new_filename = self.path.stem + str(nOT_A_CONSTANT) + '.encrypted' + self.path.suffix
                         self.new_path = self.path.with_name(self.new_filename)
                 self.path.rename(self.new_path) 
-            self.path , self.filename = self.new_path, self.new_filename
-          
+            self.path = self.new_path
+            self.filename = self.new_filename
         except OSError: 
             Input = str(input('Error:Rename failed.\n Would you like to try again?(Y/N)'))
             if Input.lower() in ['y', ' yes']:
@@ -176,7 +180,6 @@ class cmd():
                   return
             else:
                 raise InputUnrecognisedError
-        
 
     @format_
     def decrypt(self):
@@ -207,7 +210,7 @@ class cmd():
                 raise FileEmptyError
             self.rename()
         else:
-            print ('Process failed: setup of file was not initialised.')
+            raise FileNotAbleToEncryptOrDecrypt
 
     @format_
     def encrypt(self):
@@ -246,7 +249,7 @@ class cmd():
                 return
             self.rename()
         else:
-            print ('Process failed: setup of file was not initialised.')
+            raise FileNotAbleToEncryptOrDecrypt
 
     def cmd_done(self):
             print(f'This command has been sucsessfully been completed at {datetime.now()}')
@@ -285,5 +288,9 @@ class cmd():
                 self.cmd = (str(input('chaos>>> '))).split()
             exit()
     
-uhhh = cmd()
-uhhh.process_cmd()
+def fuckassfunction():
+    if __name__ = '__main__':
+        kms = imgoingtofuckingkillyoumyself()
+        kms.process_cmd()
+
+fuckassfunction()
